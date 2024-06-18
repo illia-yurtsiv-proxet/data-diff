@@ -2,6 +2,7 @@ from argparse import Namespace
 from collections import defaultdict
 import json
 from pathlib import Path
+import sys
 from typing import Any, List, Dict, Tuple, Set, Optional
 
 import attrs
@@ -10,6 +11,11 @@ from pydantic import BaseModel
 
 from packaging.version import parse as parse_version
 from dbt.config.renderer import ProfileRenderer
+try:
+    from dbt_common.clients.system import get_env
+    from dbt_common.context import set_invocation_context
+except ImportError:
+    pass
 from data_diff.dbt_config_validators import ManifestJsonConfig, RunResultsJsonConfig
 
 from data_diff.errors import (
@@ -120,6 +126,8 @@ class DbtParser:
     ) -> None:
         super().__init__()
 
+        if hasattr(sys.modules[__name__], "set_invocation_context"):
+            set_invocation_context(get_env())
         try_set_dbt_flags()
         self.dbt_runner = try_get_dbt_runner()
         self.project_dir = Path(project_dir_override or default_project_dir())
